@@ -10,25 +10,24 @@ from std_msgs.msg import Float64MultiArray, Float64
 
 class vision:
     def __init__(self):
+        # initialize the node named vision
+        rospy.init_node('vision', anonymous=True)
 
-        # initialize the node named image_processing
-        rospy.init_node('image_processing', anonymous=True)
-        self.im1 = image1.image1_converter()
-        self.im2 = image2.image2_converter()
+        self.v1_pub = rospy.Publisher(
+            "/vec1", Float64MultiArray, queue_size=10)
 
         # image1 position topics
-        self.yz_joint1_sub = rospy.Subscriber("/estimates/yz/joint1", Float64MultiArray, callback)
-        self.yz_joint2_sub = rospy.Subscriber("/estimates/yz/joint2", Float64MultiArray, callback)
-        self.yz_joint3_sub = rospy.Subscriber("/estimates/yz/joint3", Float64MultiArray, callback)
-        self.yz_joint4_sub = rospy.Subscriber("/estimates/yz/joint4", Float64MultiArray, callback)
+        self.yz_joint1_sub = message_filters.Subscriber("/estimates/yz/joint1", Float64MultiArray, queue_size=10)
+        self.yz_joint2_sub = message_filters.Subscriber("/estimates/yz/joint2", Float64MultiArray, queue_size=10)
+        self.yz_joint3_sub = message_filters.Subscriber("/estimates/yz/joint3", Float64MultiArray, queue_size=10)
+        self.yz_joint4_sub = message_filters.Subscriber("/estimates/yz/joint4", Float64MultiArray, queue_size=10)
 
         # image2 position topics
-        self.xz_joint1_sub = rospy.Subscriber("/estimates/xz/joint1", Float64MultiArray)
-        self.xz_joint2_sub = rospy.Subscriber("/estimates/xz/joint2", Float64MultiArray)
-        self.xz_joint3_sub = rospy.Subscriber("/estimates/xz/joint3", Float64MultiArray)
-        self.xz_joint4_sub = rospy.Subscriber("/estimates/xz/joint4", Float64MultiArray)
-
-        ts = message_filters.TimeSynchronizer([
+        self.xz_joint1_sub = message_filters.Subscriber("/estimates/xz/joint1", Float64MultiArray, queue_size=10)
+        self.xz_joint2_sub = message_filters.Subscriber("/estimates/xz/joint2", Float64MultiArray, queue_size=10)
+        self.xz_joint3_sub = message_filters.Subscriber("/estimates/xz/joint3", Float64MultiArray, queue_size=10)
+        self.xz_joint4_sub = message_filters.Subscriber("/estimates/xz/joint4", Float64MultiArray, queue_size=10)
+        ts = message_filters.ApproximateTimeSynchronizer([
             self.yz_joint1_sub,
             self.yz_joint2_sub,
             self.yz_joint3_sub,
@@ -36,21 +35,39 @@ class vision:
             self.xz_joint1_sub,
             self.xz_joint2_sub,
             self.xz_joint3_sub,
-            self.xz_joint4_sub] , 10)
-        ts.registerCallback(callback)
+            self.xz_joint4_sub] , 9, 0.1, allow_headerless=True)
+        ts.registerCallback(self.callback)
 
-
-def callback(self, data):
-    yz_joint1 = data[0]
-    yz_joint2 = data[1]
-    yz_joint3 = data[2]
-    yz_joint4 = data[3]
-    xz_joint1 = data[4]
-    xz_joint2 = data[5]
-    xz_joint3 = data[6]
-    xz_joint4 = data[7]
+    def callback(self, d0, d1, d2, d3, d4, d5, d6, d7):
+        yz_joint1 = d0.data
+        yz_joint2 = d1.data
+        yz_joint3 = d2.data
+        yz_joint4 = d3.data
+        xz_joint1 = d4.data
+        xz_joint2 = d5.data
+        xz_joint3 = d6.data
+        xz_joint4 = d7.data
+        
+        # TODO calculate angles
     
-    # TODO calculate angles
+        # get vectors for links
+        vec_link1 = np.array([xz_joint2[0] - xz_joint1[0],
+                            yz_joint1[0] - yz_joint2[0],
+                            (xz_joint2[1] + yz_joint2[1])/2 - (xz_joint1[1] + yz_joint1[1])/2])
+    
+        vec_link2 = np.array([xz_joint3[0] - xz_joint2[0],
+                            yz_joint2[0] - yz_joint3[0],
+                            (xz_joint3[1] + yz_joint3[1])/2 - (xz_joint2[1] + yz_joint3[1])/2])
+    
+        vec_link3 = np.array([xz_joint4[0] - xz_joint3[0],
+                            yz_joint3[0] - yz_joint4[0],
+                            (xz_joint4[1] + yz_joint4[1])/2 - (xz_joint3[1] + yz_joint3[1])/2])
+        
+        a = Float64MultiArray()
+        a.data = vec_link1
+        self.v1_pub.publish(a)
+        
+
 
 
 # call the class

@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float64MultiArray, Float64
+from std_msgs.msg import Float64MultiArray, Float64, Time
 from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -36,15 +36,6 @@ class image1_converter:
 
         # initialize a publisher to send joints' estimated position to a topic called joints_est_pos
         # this camera views the robot on the y and z axes
-        # self.joint1_est_pub = rospy.Publisher(
-        #     "yz_joint1_est_pos", Float64MultiArray, queue_size=10)
-        # self.joint2_est_pub = rospy.Publisher(
-        #     "yz_joint2_est_pos", Float64MultiArray, queue_size=10)
-        # self.joint3_est_pub = rospy.Publisher(
-        #     "yz_joint3_est_pos", Float64MultiArray, queue_size=10)
-        # self.joint4_est_pub = rospy.Publisher(
-        #     "yz_joint4_est_pos", Float64MultiArray, queue_size=10)
-
         self.joint1_est_pub = rospy.Publisher(
             "/estimates/yz/joint1", Float64MultiArray, queue_size=10)
         self.joint2_est_pub = rospy.Publisher(
@@ -60,7 +51,8 @@ class image1_converter:
         self.joint4_pos = np.array([])
 
         self.time_trajectory = rospy.get_time()
-        rospy.spin()
+
+        
 
   # Recieve data from camera 1, process it, and publish
     def callback1(self,data):
@@ -78,6 +70,7 @@ class image1_converter:
 
         im1=cv2.imshow('window1', self.cv_image1)
         cv2.waitKey(1)
+        
         # Publish the results
         try: 
             self.image_pub1.publish(self.bridge.cv2_to_imgmsg(self.cv_image1, "bgr8"))
@@ -92,7 +85,7 @@ class image1_converter:
         self.joint1_pos = self.detect_colour(self.joint1_pos, self.cv_image1,
                                             (0, 100, 100), (0, 255, 255))  # yellow
         a.data = self.joint1_pos
-        self.joint1_est_pub.publish(a)
+        self.joint1_est_pub.publish(a, )
         
         self.joint2_pos = self.detect_colour(self.joint2_pos, self.cv_image1,
                                             (100, 0, 0), (255, 0, 0))  # blue
