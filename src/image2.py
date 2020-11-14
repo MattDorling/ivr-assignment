@@ -65,7 +65,7 @@ class image2_converter:
     def detect_colour(self, joint, image, bgr_low, bgr_up):
         mask = cv2.inRange(image, bgr_low, bgr_up)
         kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.dilate(mask, kernel, iterations=3)
+        mask = cv2.dilate(mask, kernel, iterations=2)
         M = cv2.moments(mask)
         if M["m00"] != 0:   # this prevents division by zero when the colour is not visible.
             cx = int(M["m10"] / M["m00"])

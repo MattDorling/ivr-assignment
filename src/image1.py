@@ -70,7 +70,7 @@ class image1_converter:
 
         im1=cv2.imshow('window1', self.cv_image1)
         cv2.waitKey(1)
-        
+
         # Publish the results
         try: 
             self.image_pub1.publish(self.bridge.cv2_to_imgmsg(self.cv_image1, "bgr8"))
@@ -106,7 +106,7 @@ class image1_converter:
     def detect_colour(self, joint, image, bgr_low, bgr_up):
         mask = cv2.inRange(image, bgr_low, bgr_up)
         kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.dilate(mask, kernel, iterations=3)
+        mask = cv2.dilate(mask, kernel, iterations=2)
         M = cv2.moments(mask)
         if M["m00"] != 0:   # this prevents division by zero when the colour is not visible.
             cx = int(M["m10"] / M["m00"])
@@ -118,6 +118,9 @@ class image1_converter:
     # moves joints using sin function
     def move_joints(self):
         t = rospy.get_time() - self.time_trajectory
+        if (t >= 5):
+            t = 0
+            self.time_trajectory = rospy.get_time()
         j2 = (np.pi / 2) * np.sin((np.pi/15) * t)
         j3 = (np.pi / 2) * np.sin((np.pi/18) * t)
         j4 = (np.pi / 2) * np.sin((np.pi/20) * t)
