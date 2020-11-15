@@ -59,8 +59,36 @@ class vision:
         yz_joint1 = np.array([399.0,532.0])
         xz_joint1 = yz_joint1
 
+
+        # changing coordinates so they are w.r.t the (0,0) being yellow centre:
+        yz_joint2[1] = yz_joint1[1] - yz_joint2[1]
+        yz_joint3[1] = yz_joint1[1] - yz_joint3[1]
+        yz_joint4[1] = yz_joint1[1] - yz_joint4[1]
+        xz_joint2[1] = yz_joint1[1] - xz_joint2[1]
+        xz_joint3[1] = yz_joint1[1] - xz_joint3[1]
+        xz_joint4[1] = yz_joint1[1] - xz_joint4[1]
+
+        yz_joint2[0] -= yz_joint1[0]
+        yz_joint3[0] -= yz_joint1[0]
+        yz_joint4[0] -= yz_joint1[0]
+        xz_joint2[0] -= xz_joint1[0]
+        xz_joint3[0] -= xz_joint1[0]
+        xz_joint4[0] -= xz_joint1[0]
+
         # TODO calculate angles
 
+        pos_joint1 = np.array([ xz_joint1[0],
+                                yz_joint1[0],
+                               (xz_joint1[1] + yz_joint1[1])/2])
+        pos_joint2 = np.array([ xz_joint2[0],
+                                yz_joint2[0],
+                               (xz_joint2[1] + yz_joint2[1])/2])
+        pos_joint3 = np.array([ xz_joint3[0],
+                                yz_joint3[0],
+                               (xz_joint3[1] + yz_joint3[1])/2])
+        pos_joint4 = np.array([ xz_joint4[0],
+                                yz_joint4[0],
+                               (xz_joint4[1] + yz_joint4[1])/2])
 
         # vec = [x,y,z]    
         # get vectors for links
