@@ -63,7 +63,7 @@ class image1_converter:
             print(e)
 
         # Uncomment if you want to save the image
-        #cv2.imwrite('image_copy.png', cv_image)
+        # cv2.imwrite('image_copy.png', self.cv_image1)
 
         self.find_joints()
         self.move_joints()
@@ -106,7 +106,7 @@ class image1_converter:
     def detect_colour(self, joint, image, bgr_low, bgr_up):
         mask = cv2.inRange(image, bgr_low, bgr_up)
         kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.dilate(mask, kernel, iterations=2)
+        mask = cv2.dilate(mask, kernel, iterations=3)
         M = cv2.moments(mask)
         if M["m00"] != 0:   # this prevents division by zero when the colour is not visible.
             cx = int(M["m10"] / M["m00"])
