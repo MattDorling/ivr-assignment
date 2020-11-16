@@ -22,6 +22,9 @@ class vision:
             "/estimates/angles/link_3", Float64, queue_size=10)
         self.ang4_pub = rospy.Publisher(
             "/estimates/angles/link_4", Float64, queue_size=10)
+        
+        self.vec3_pub = rospy.Publisher(
+            "/vec3", Float64MultiArray, queue_size=10)
 
 
         # image1 position topics
@@ -46,6 +49,9 @@ class vision:
             self.xz_joint4_sub] , 9, 0.066, allow_headerless=True)
         ts.registerCallback(self.callback)
 
+        # save previous z values to check against:
+        ## TODO
+
     def callback(self, d0, d1, d2, d3, d4, d5, d6, d7):
         yz_joint1 = d0.data
         yz_joint2 = d1.data
@@ -59,27 +65,19 @@ class vision:
         yz_joint1 = np.array([399.0,532.0])
         xz_joint1 = yz_joint1
 
+        x_axis = np.array([1,0,0])
+        y_axis = np.array([0,1,0])
+        z_axis = np.array([0,0,1])
+
 
         # changing coordinates so they are w.r.t the (0,0) being yellow centre:
-        yz_joint2[1] = yz_joint1[1] - yz_joint2[1]
-        yz_joint3[1] = yz_joint1[1] - yz_joint3[1]
-        yz_joint4[1] = yz_joint1[1] - yz_joint4[1]
-        xz_joint2[1] = yz_joint1[1] - xz_joint2[1]
-        xz_joint3[1] = yz_joint1[1] - xz_joint3[1]
-        xz_joint4[1] = yz_joint1[1] - xz_joint4[1]
+        yz_joint2  = np.array([yz_joint2[0] - yz_joint1[0], yz_joint1[1] - yz_joint2[1]])
+        yz_joint3  = np.array([yz_joint3[0] - yz_joint1[0], yz_joint1[1] - yz_joint3[1]])
+        yz_joint4  = np.array([yz_joint4[0] - yz_joint1[0], yz_joint1[1] - yz_joint4[1]])
+        xz_joint2  = np.array([xz_joint2[0] - xz_joint1[0], xz_joint1[1] - xz_joint2[1]])
+        xz_joint3  = np.array([xz_joint3[0] - xz_joint1[0], xz_joint1[1] - xz_joint3[1]])
+        xz_joint4  = np.array([xz_joint4[0] - xz_joint1[0], xz_joint1[1] - xz_joint4[1]])
 
-        yz_joint2[0] -= yz_joint1[0]
-        yz_joint3[0] -= yz_joint1[0]
-        yz_joint4[0] -= yz_joint1[0]
-        xz_joint2[0] -= xz_joint1[0]
-        xz_joint3[0] -= xz_joint1[0]
-        xz_joint4[0] -= xz_joint1[0]
-
-        # TODO calculate angles
-
-        pos_joint1 = np.array([ xz_joint1[0],
-                                yz_joint1[0],
-                               (xz_joint1[1] + yz_joint1[1])/2])
         pos_joint2 = np.array([ xz_joint2[0],
                                 yz_joint2[0],
                                (xz_joint2[1] + yz_joint2[1])/2])
@@ -90,66 +88,46 @@ class vision:
                                 yz_joint4[0],
                                (xz_joint4[1] + yz_joint4[1])/2])
 
-        # vec = [x,y,z]    
-        # get vectors for links
-        vec_link1 = np.array([xz_joint2[0] - xz_joint1[0],
-                            yz_joint2[0] - yz_joint1[0],
-                            (xz_joint1[1] + yz_joint1[1])/2 - (xz_joint2[1] + yz_joint2[1])/2])
-
-        vec_link2 = np.array([xz_joint3[0] - xz_joint2[0],
-                            yz_joint3[0] - yz_joint2[0],
-                            (xz_joint2[1] + yz_joint2[1])/2 - (xz_joint3[1] + yz_joint3[1])/2])
-
-        vec_link3 = np.array([xz_joint4[0] - xz_joint3[0],
-                            yz_joint4[0] - yz_joint3[0],
-                            (xz_joint3[1] + yz_joint3[1])/2 - (xz_joint4[1] + yz_joint4[1])/2])
-        vec_link2_xz = np.array([vec_link2[0], vec_link2[2]])
-        vec_link2_yz = np.array([vec_link2[1], vec_link2[2]])
+        vec_link2 = np.array(pos_joint3-pos_joint2)
+        vec_link3 = np.array(pos_joint4-pos_joint3)
 
         a = Float64()
-        a.data = self.angle( self.axis_vector(0,0,1, vec_link1), vec_link1)
-        self.ang1_pub.publish(a)
 
+        # angle 2
+        theta_2 = self.angle2(z_axis, vec_link2, x_axis)
+        a.data = theta_2
+        self.ang2_pub.publish(a)    # this works, but goes off when green hidden by blue.
 
- 
-        a.data = self.angle(self.axis_vector2(0,1,vec_link2_yz), vec_link2_yz)
-        self.ang2_pub.publish(a)
-        a.data = np.pi/2 - self.angle(self.axis_vector2(1,0,vec_link2_xz), vec_link2_xz)
-        self.ang3_pub.publish(a)
+        # angle 3
+        theta_3 = self.angle2(z_axis, vec_link2, y_axis)
+        a.data = theta_3
+        self.ang3_pub.publish(a)    # this works, with inaccuracy (like 2)
 
-
-        # a.data = self.angle(self.axis_vector(0,0,1, vec_link2), vec_link2)
-        # self.ang2_pub.publish(a)
-        # a.data = np.pi/2 - self.angle(self.axis_vector(1,0,0, vec_link2), vec_link2)
-        # self.ang3_pub.publish(a)
-        a.data = self.angle(vec_link3, vec_link2)
+        # angle 4
+        r = np.matmul(self.rotation_matrix(x_axis, theta_2) , self.rotation_matrix(y_axis, theta_3))
+        axis = np.matmul(r, x_axis)
+        theta_4 = self.angle2(vec_link2,vec_link3, axis)
+        a.data = theta_4
         self.ang4_pub.publish(a)
 
-        # TODO improve the accuracy
-        # I think I need to separate joint2 and joint3 - rotating around blue on x and y axes
+    def angle2(self, a, b, plane_norm):
+        plane_norm = self.normalize(plane_norm)
+        return np.arctan2(np.dot(np.cross(a,b),plane_norm),np.dot(a,b))
 
-    def angle(self, a, b):
-        return np.arctan2(np.linalg.norm(np.cross(a,b)), np.dot(a,b))
 
-    def axis_vector(self,x,y,z, vector):
-        v = np.array([x,y,z])
-        u = np.array([1,1,1])
-        if vector[0] < 0:
-            u[0] = -1
-        if vector[1] < 0:
-            u[1] = -1
-        if vector[2] < 0:
-            u[2] = -1
-        return v * u
+    def rotation_matrix(self, axis, theta):
+        axis = axis / np.sqrt(np.dot(axis, axis))
+        a = np.cos(theta / 2.0)
+        b, c, d = -axis * np.sin(theta / 2.0)
+        aa, bb, cc, dd = a * a, b * b, c * c, d * d
+        bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+        return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
-    def axis_vector2(self,a,b, vector):
-        v = np.array([a,b])
-        u = np.array([1,1])
-        if vector[0] < 0:
-            u[0] = -1
-        if vector[1] < 0:
-            u[1] = -1
-        return v * u
+    def normalize(self, v):
+        return v / np.linalg.norm(v)
+
 # call the class
 def main(args):
     v = vision()

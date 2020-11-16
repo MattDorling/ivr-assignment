@@ -118,12 +118,12 @@ class image1_converter:
     # moves joints using sin function
     def move_joints(self):
         t = rospy.get_time() - self.time_trajectory
-        if (t >= 5):
-            t = 0
-            self.time_trajectory = rospy.get_time()
+        # if (t >= 5):
+        #     t = 0
+        #     self.time_trajectory = rospy.get_time()
         j2 = (np.pi / 2) * np.sin((np.pi/15) * t)
         j3 = (np.pi / 2) * np.sin((np.pi/18) * t)
-        j4 = (np.pi / 2) * np.sin((np.pi/20) * t)
+        j4 = (np.pi / 3) * np.sin((np.pi/20) * t) # TODO changed to /3 from /2
 
 
         # Publish the results
