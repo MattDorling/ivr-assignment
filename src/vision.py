@@ -22,22 +22,28 @@ class vision:
             "/estimates/angles/link_3", Float64, queue_size=10)
         self.ang4_pub = rospy.Publisher(
             "/estimates/angles/link_4", Float64, queue_size=10)
-        
-        self.vec3_pub = rospy.Publisher(
-            "/vec3", Float64MultiArray, queue_size=10)
-
 
         # image1 position topics
-        self.yz_joint1_sub = message_filters.Subscriber("/estimates/yz/joint1", Float64MultiArray, queue_size=10)
-        self.yz_joint2_sub = message_filters.Subscriber("/estimates/yz/joint2", Float64MultiArray, queue_size=10)
-        self.yz_joint3_sub = message_filters.Subscriber("/estimates/yz/joint3", Float64MultiArray, queue_size=10)
-        self.yz_joint4_sub = message_filters.Subscriber("/estimates/yz/joint4", Float64MultiArray, queue_size=10)
+        self.yz_joint1_sub = message_filters.Subscriber(
+            "/estimates/yz/joint1", Float64MultiArray, queue_size=10)
+        self.yz_joint2_sub = message_filters.Subscriber(
+            "/estimates/yz/joint2", Float64MultiArray, queue_size=10)
+        self.yz_joint3_sub = message_filters.Subscriber(
+            "/estimates/yz/joint3", Float64MultiArray, queue_size=10)
+        self.yz_joint4_sub = message_filters.Subscriber(
+            "/estimates/yz/joint4", Float64MultiArray, queue_size=10)
 
         # image2 position topics
-        self.xz_joint1_sub = message_filters.Subscriber("/estimates/xz/joint1", Float64MultiArray, queue_size=10)
-        self.xz_joint2_sub = message_filters.Subscriber("/estimates/xz/joint2", Float64MultiArray, queue_size=10)
-        self.xz_joint3_sub = message_filters.Subscriber("/estimates/xz/joint3", Float64MultiArray, queue_size=10)
-        self.xz_joint4_sub = message_filters.Subscriber("/estimates/xz/joint4", Float64MultiArray, queue_size=10)
+        self.xz_joint1_sub = message_filters.Subscriber(
+            "/estimates/xz/joint1", Float64MultiArray, queue_size=10)
+        self.xz_joint2_sub = message_filters.Subscriber(
+            "/estimates/xz/joint2", Float64MultiArray, queue_size=10)
+        self.xz_joint3_sub = message_filters.Subscriber(
+            "/estimates/xz/joint3", Float64MultiArray, queue_size=10)
+        self.xz_joint4_sub = message_filters.Subscriber(
+            "/estimates/xz/joint4", Float64MultiArray, queue_size=10)
+
+        # synchronize joint positions for the callback
         ts = message_filters.ApproximateTimeSynchronizer([
             self.yz_joint1_sub,
             self.yz_joint2_sub,
@@ -49,9 +55,6 @@ class vision:
             self.xz_joint4_sub] , 9, 0.066, allow_headerless=True)
         ts.registerCallback(self.callback)
 
-        # save previous z values to check against:
-        ## TODO
-
     def callback(self, d0, d1, d2, d3, d4, d5, d6, d7):
         yz_joint1 = d0.data
         yz_joint2 = d1.data
@@ -62,15 +65,18 @@ class vision:
         xz_joint3 = d6.data
         xz_joint4 = d7.data
 
-        yz_joint1 = np.array([399.0,532.0])
+        # these joints do not move so they are hard-coded for now:
+        yz_joint1 = np.array([400.0,532.0])
         xz_joint1 = yz_joint1
+        yz_joint2 = np.array([400.0,477.0])
+        xz_joint2 = yz_joint1
 
+        # defining axes
         x_axis = np.array([1,0,0])
         y_axis = np.array([0,1,0])
         z_axis = np.array([0,0,1])
 
-
-        # changing coordinates so they are w.r.t the (0,0) being yellow centre:
+        # changing coordinates so that the origin is the centre of yellow joint:
         yz_joint2  = np.array([yz_joint2[0] - yz_joint1[0], yz_joint1[1] - yz_joint2[1]])
         yz_joint3  = np.array([yz_joint3[0] - yz_joint1[0], yz_joint1[1] - yz_joint3[1]])
         yz_joint4  = np.array([yz_joint4[0] - yz_joint1[0], yz_joint1[1] - yz_joint4[1]])
@@ -78,6 +84,7 @@ class vision:
         xz_joint3  = np.array([xz_joint3[0] - xz_joint1[0], xz_joint1[1] - xz_joint3[1]])
         xz_joint4  = np.array([xz_joint4[0] - xz_joint1[0], xz_joint1[1] - xz_joint4[1]])
 
+        # get vector positions of the joints
         pos_joint2 = np.array([ xz_joint2[0],
                                 yz_joint2[0],
                                (xz_joint2[1] + yz_joint2[1])/2])
@@ -88,43 +95,45 @@ class vision:
                                 yz_joint4[0],
                                (xz_joint4[1] + yz_joint4[1])/2])
 
+        # link vectors used to calculate angles
         vec_link2 = np.array(pos_joint3-pos_joint2)
         vec_link3 = np.array(pos_joint4-pos_joint3)
 
         a = Float64()
 
+        # calculating the angles:
         # angle 2
-        theta_2 = self.angle2(z_axis, vec_link2, x_axis)
+        theta_2 = self.angle(z_axis, vec_link2, x_axis)
         a.data = theta_2
-        self.ang2_pub.publish(a)    # this works, but goes off when green hidden by blue.
+        self.ang2_pub.publish(a)
 
         # angle 3
-        theta_3 = self.angle2(z_axis, vec_link2, y_axis)
+        theta_3 = self.angle(z_axis, vec_link2, y_axis)
         a.data = theta_3
-        self.ang3_pub.publish(a)    # this works, with inaccuracy (like 2)
+        self.ang3_pub.publish(a)
 
         # angle 4
         r = np.matmul(self.rotation_matrix(x_axis, theta_2) , self.rotation_matrix(y_axis, theta_3))
         axis = np.matmul(r, x_axis)
-        theta_4 = self.angle2(vec_link2,vec_link3, axis)
+        theta_4 = self.angle(vec_link2,vec_link3, axis)
         a.data = theta_4
         self.ang4_pub.publish(a)
 
-    def angle2(self, a, b, plane_norm):
+    # calculate the angle between vectors a and b, given a specified normal vector to the plane
+    def angle(self, a, b, plane_norm):
         plane_norm = self.normalize(plane_norm)
         return np.arctan2(np.dot(np.cross(a,b),plane_norm),np.dot(a,b))
 
-
+    # calculate the rotation matrix of theta about a given axis
     def rotation_matrix(self, axis, theta):
         axis = axis / np.sqrt(np.dot(axis, axis))
         a = np.cos(theta / 2.0)
         b, c, d = -axis * np.sin(theta / 2.0)
-        aa, bb, cc, dd = a * a, b * b, c * c, d * d
-        bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
-        return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                         [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                         [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+        return np.array([[a*a + b*b - c*c - d*d, 2 * (b*c + a*d), 2 * (b*d - a*c)],
+                         [2 * (b*c - a*d), a*a + c*c - b*b - d*d, 2 * (c*d + a*b)],
+                         [2 * (b*d + a*c), 2 * (c*d - a*b), a*a + d*d - b*b - c*c]])
 
+    # normalize a vector
     def normalize(self, v):
         return v / np.linalg.norm(v)
 

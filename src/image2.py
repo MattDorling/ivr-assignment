@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import roslib
 import sys
 import rospy
 import cv2
 import numpy as np
-from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float64MultiArray, Float64
+from std_msgs.msg import Float64MultiArray
 from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -25,7 +23,7 @@ class image2_converter:
         self.bridge = CvBridge()
 
         # initialize a publisher to send joints' estimated position to a topic called joints_est_pos
-        # this camera views the robot on the y and z axes
+        # this camera views the robot on the x and z axes
         self.joint1_est_pub = rospy.Publisher(
             "/estimates/xz/joint1", Float64MultiArray, queue_size=10)
         self.joint2_est_pub = rospy.Publisher(
@@ -35,33 +33,34 @@ class image2_converter:
         self.joint4_est_pub = rospy.Publisher(
             "/estimates/xz/joint4", Float64MultiArray, queue_size=10)
 
+        # initialize arrays to store joint positions
         self.joint1_pos = np.array([])
         self.joint2_pos = np.array([])
         self.joint3_pos = np.array([])
         self.joint4_pos = np.array([])
 
-  # Recieve data, process it, and publish
+  # receive data from camera 2, process it, and publish
     def callback2(self,data):
-        # Recieve the image
+        # receive the image
         try:
             self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
-        # Uncomment if you want to save the image
-        #cv2.imwrite('image_copy.png', cv_image)
+        # uncomment if you want to save the image
+        # cv2.imwrite('image_copy.png', cv_image)
         
         self.find_joints()
         
         im2=cv2.imshow('window2', self.cv_image2)
         cv2.waitKey(1)
     
-         # Publish the results
+        # publish the results
         try: 
             self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
         except CvBridgeError as e:
             print(e)
 
-    # Detecting the centre of the {colour} circle
+    # detecting the centre of the {colour} circle
     def detect_colour(self, joint, image, bgr_low, bgr_up):
         mask = cv2.inRange(image, bgr_low, bgr_up)
         kernel = np.ones((5, 5), np.uint8)
@@ -78,23 +77,27 @@ class image2_converter:
     def find_joints(self):
         a = Float64MultiArray()
         # find centre of joints by detecting colour:
+        # yellow
         self.joint1_pos = self.detect_colour(self.joint1_pos, self.cv_image2,
-                                            (0, 100, 100), (0, 255, 255))  # yellow
+                                            (0, 100, 100), (0, 255, 255))
         a.data = self.joint1_pos
         self.joint1_est_pub.publish(a)
         
+        # blue
         self.joint2_pos = self.detect_colour(self.joint2_pos, self.cv_image2,
-                                            (100, 0, 0), (255, 0, 0))  # blue
+                                            (100, 0, 0), (255, 0, 0))
         a.data = self.joint2_pos
         self.joint2_est_pub.publish(a)
         
+        # green
         self.joint3_pos = self.detect_colour(self.joint3_pos, self.cv_image2,
-                                            (0, 100, 0), (0, 255, 0))  # green
+                                            (0, 100, 0), (0, 255, 0))
         a.data = self.joint3_pos
         self.joint3_est_pub.publish(a)
         
+        # red
         self.joint4_pos = self.detect_colour(self.joint4_pos, self.cv_image2,
-                                            (0, 0, 100), (0, 0, 255))  # red
+                                            (0, 0, 100), (0, 0, 255))
         a.data = self.joint4_pos
         self.joint4_est_pub.publish(a)
 
@@ -110,5 +113,3 @@ def main(args):
 # run the code if the node is called
 if __name__ == '__main__':
     main(sys.argv)
-
-
