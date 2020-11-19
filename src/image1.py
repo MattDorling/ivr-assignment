@@ -32,7 +32,7 @@ class image1_converter:
         self.robot_joint4_pub = rospy.Publisher(
             "/robot/joint4_position_controller/command", Float64, queue_size=10)
 
-        # initialize a publisher to send joints' estimated position to a topic called joints_est_pos
+        # initialize a publisher to send joints' estimated position to topics
         # this camera views the robot on the y and z axes
         self.joint1_est_pub = rospy.Publisher(
             "/estimates/yz/joint1", Float64MultiArray, queue_size=10)
@@ -43,11 +43,16 @@ class image1_converter:
         self.joint4_est_pub = rospy.Publisher(
             "/estimates/yz/joint4", Float64MultiArray, queue_size=10)
 
+        # initialize a publisher to send target's estimated position to a topic
+        self.target_est_pub = rospy.Publisher(
+            "/estimates/yz/target", Float64MultiArray, queue_size=10)
+
         # initialize arrays to store joint positions
         self.joint1_pos = np.array([])
         self.joint2_pos = np.array([])
         self.joint3_pos = np.array([])
         self.joint4_pos = np.array([])
+        self.target_pos = np.array([])
 
         # record start time
         self.time_trajectory = rospy.get_time()
@@ -64,6 +69,7 @@ class image1_converter:
         # cv2.imwrite('image_copy.png', self.cv_image1)
 
         self.find_joints()
+        self.detect_target()
         self.move_joints()
 
         im1=cv2.imshow('window1', self.cv_image1)
@@ -74,6 +80,37 @@ class image1_converter:
             self.image_pub1.publish(self.bridge.cv2_to_imgmsg(self.cv_image1, "bgr8"))
         except CvBridgeError as e:
             print(e)
+
+    # detect the location of the target sphere
+    def detect_target(self):
+        image = cv2.inRange(self.cv_image1,(5, 30, 20), (25, 255, 255) )
+        p = cv2.SimpleBlobDetector_Params()
+        p.filterByCircularity = True
+        p.minCircularity = 0.7
+        p.filterByConvexity = False
+        p.filterByArea = False
+        p.filterByInertia = False
+
+        blob_det = cv2.SimpleBlobDetector_create(p)
+        keypoints = blob_det.detect(image)
+        if len(keypoints) == 1:
+            h, w = 50, 50
+            cx,cy = keypoints[0].pt
+            sub_img = image[int(cy-h/2):int(cy+h/2), int(cx-w/2):int(cx+w/2)]
+            M = cv2.moments(sub_img)
+            cx = int(cx - w/2 + M["m10"] / M["m00"])
+            cy = int(cy - h/2 + M["m01"] / M["m00"])
+
+        else:
+            cx,cy = self.target_pos
+        self.target_pos = np.array([cx, cy])
+        centre = Float64MultiArray()
+        centre.data = np.array([cx, cy])
+        self.target_est_pub.publish(centre)
+        
+        # blobs = cv2.drawMarker(image, (int(cx),int(cy)), (0,0,255))
+        # number_of_blobs = len(keypoints) 
+        # cv2.imshow("Filtering Circular Blobs Only", blobs) 
 
     # find the centres of the joints and publishes these to topics
     def find_joints(self):
