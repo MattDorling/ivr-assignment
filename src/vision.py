@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import image1
-import image2
 import sys
 import numpy as np
 import rospy
@@ -76,8 +74,6 @@ class vision:
         xz_joint4 = d7.data
         yz_target = t1.data
         xz_target = t2.data
-
-
 
         # these joints do not move so they are hard-coded for now:
         yz_joint1 = np.array([400.0,532.0])
