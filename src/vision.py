@@ -77,12 +77,17 @@ class vision:
         yz_target = t1.data
         xz_target = t2.data
 
+
+
         # these joints do not move so they are hard-coded for now:
         yz_joint1 = np.array([400.0,532.0])
         xz_joint1 = yz_joint1
         yz_joint2 = np.array([400.0,477.0])
         xz_joint2 = yz_joint1
 
+        # calculating the ratio to convert between pixels and meters:
+        meters_per_pixel = self.pixel2meter(yz_joint1,yz_joint2,2.5)
+        
         # defining axes
         x_axis = np.array([1,0,0])
         y_axis = np.array([0,1,0])
@@ -103,10 +108,10 @@ class vision:
         pos_target = np.array([ xz_target[0],
                                 yz_target[0],
                                (xz_target[1] + yz_target[1])/2])
+
         # convert pixels to meter distance and publish:
         t = Float64MultiArray()
-        # t.data = 10 * self.pixel2meter(yz_joint1, yz_joint2, 2.5) * pos_target
-        t.data = pos_target     # TODO convert pixel position to meters
+        t.data = pos_target * meters_per_pixel
         self.target_pub.publish(t)
 
         # get vector positions of the joints
@@ -160,9 +165,8 @@ class vision:
     def normalize(self, v):
         return v / np.linalg.norm(v)
 
-    # calculate the conversion from pixel to meter
+    # calculating the ratio to convert between pixels and meters:
     def pixel2meter(self, pos_1, pos_2, meters):
-        # find the distance between two 2d points
         dist = np.sum((pos_1 - pos_2)**2)
         return float(meters / np.sqrt(dist))
 
