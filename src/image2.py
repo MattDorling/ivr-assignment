@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import rospy
 import cv2
@@ -7,7 +6,6 @@ import numpy as np
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float64MultiArray
 from cv_bridge import CvBridge, CvBridgeError
-
 
 class image2_converter:
 
@@ -22,7 +20,7 @@ class image2_converter:
         # initialize the bridge between openCV and ROS
         self.bridge = CvBridge()
 
-        # initialize a publisher to send joints' estimated position to a topic called joints_est_pos
+        # initialize a publisher to send joints' estimated position to topics
         # this camera views the robot on the x and z axes
         self.joint1_est_pub = rospy.Publisher(
             "/estimates/xz/joint1", Float64MultiArray, queue_size=10)
@@ -33,11 +31,16 @@ class image2_converter:
         self.joint4_est_pub = rospy.Publisher(
             "/estimates/xz/joint4", Float64MultiArray, queue_size=10)
 
+        # initialize a publisher to send target's estimated position to a topic
+        self.target_est_pub = rospy.Publisher(
+            "/estimates/xz/target", Float64MultiArray, queue_size=10)
+
         # initialize arrays to store joint positions
         self.joint1_pos = np.array([])
         self.joint2_pos = np.array([])
         self.joint3_pos = np.array([])
         self.joint4_pos = np.array([])
+        self.target_pos = np.array([])
 
   # receive data from camera 2, process it, and publish
     def callback2(self,data):
@@ -50,6 +53,7 @@ class image2_converter:
         # cv2.imwrite('image_copy.png', cv_image)
         
         self.find_joints()
+        self.detect_target()
         
         im2=cv2.imshow('window2', self.cv_image2)
         cv2.waitKey(1)
@@ -59,6 +63,46 @@ class image2_converter:
             self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
         except CvBridgeError as e:
             print(e)
+
+    # detect the location of the target sphere
+    def detect_target(self):
+        # get orange colours only from image
+        image = cv2.inRange(self.cv_image2,(5, 30, 20), (25, 255, 255) )
+
+        # set up a blob detector to detect circles
+        p = cv2.SimpleBlobDetector_Params()
+        p.filterByCircularity = True
+        p.minCircularity = 0.7
+        p.filterByConvexity = False
+        p.filterByArea = False
+        p.filterByInertia = False
+        blob_det = cv2.SimpleBlobDetector_create(p)
+        keypoints = blob_det.detect(image)
+
+        """
+        the keypoints are not accurately in the centre of the circles, but are within the circles.
+        to get the centre accurately, crop the image around the keypoint to isolate the target circle.
+        then, use moments to get the centre of mass of the blob.
+        """
+
+        # there should be one circle so one keypoint only.
+        if len(keypoints) == 1:
+            h, w = 50, 50
+            cx,cy = keypoints[0].pt
+            sub_img = image[int(cy-h/2):int(cy+h/2), int(cx-w/2):int(cx+w/2)]
+            M = cv2.moments(sub_img)
+            cx = int(cx - w/2 + M["m10"] / M["m00"])
+            cy = int(cy - h/2 + M["m01"] / M["m00"])
+
+        # if there are 0 or more than 1 keypoint, the target position is unknown.
+        else:
+            # use previous detected position
+            cx,cy = self.target_pos
+        
+        self.target_pos = np.array([cx, cy])
+        centre = Float64MultiArray()
+        centre.data = np.array([cx, cy])
+        self.target_est_pub.publish(centre)
 
     # detecting the centre of the {colour} circle
     def detect_colour(self, joint, image, bgr_low, bgr_up):
