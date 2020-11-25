@@ -43,10 +43,10 @@ class image1_43_converter:
             "/estimates/yz/joint4_4.3", Float64MultiArray, queue_size=10)
 
         # initialize arrays to store joint positions
-        self.joint1_pos = np.array([])
-        self.joint2_pos = np.array([])
+        self.joint1_pos = np.array([400,532])
+        self.joint2_pos = np.array([400,477])
         self.joint3_pos = np.array([400,380])
-        self.joint4_pos = np.array([400,310])
+        self.joint4_pos = np.array([400,300])
 
         # record start time
         self.time_trajectory = rospy.get_time()
@@ -88,15 +88,16 @@ class image1_43_converter:
         # im_edge = cv2.Canny(thresh,100,200,apertureSize=5,L2gradient=True)
         # cv2.imshow('contours',im_edge)
         # cv2.waitKey(1)
-
-        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, im.shape[0]/64, param1=200, param2=6, minRadius=1, maxRadius=11)
+        # kernel = np.ones((5, 5), 'uint8')
+        # thresh = cv2.erode(thresh, kernel, iterations=1)
+        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, im.shape[0]/64, param1=200, param2=6, minRadius=5, maxRadius=11)
         if circles is not None:
             circles = np.uint16(np.around(circles))
-            for i in circles[0, :]:
-                # Draw outer circle
-                cv2.circle(im, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                # Draw inner circle
-                cv2.circle(im, (i[0], i[1]), 2, (0, 0, 255), 3)
+        #     for i in circles[0, :]:
+        #         # Draw outer circle
+        #         cv2.circle(im, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        #         # Draw inner circle
+        #         cv2.circle(im, (i[0], i[1]), 2, (0, 0, 255), 3)
         # im_edge_all = cv2.Canny(gray,100,200,apertureSize=5,L2gradient=True)
         # im_and = cv2.bitwise_not(im_edge_gray)
 
@@ -106,6 +107,7 @@ class image1_43_converter:
             for c in circles[0,:]:
                 centres.append((c[0],c[1]))
 
+        centres = self.remove_static_joints(centres,thresh)
         joint4_candidate = self.find_nearest(centres,self.joint4_pos)
         if joint4_candidate is not None:
             self.joint4_pos = joint4_candidate
@@ -114,10 +116,14 @@ class image1_43_converter:
         joint3_candidate = self.find_nearest(centres,self.joint3_pos)
         if joint3_candidate is not None:
             self.joint3_pos = joint3_candidate
-        
-        # cv2.drawMarker(im, self.joint3_pos,(0,255,0))
+
+        if self.distance(self.joint2_pos, self.joint3_pos) > self.distance(self.joint2_pos,self.joint4_pos):
+            temp = self.joint4_pos
+            self.joint4_pos = self.joint3_pos
+            self.joint3_pos = temp
+
         cv2.drawMarker(im, (int(self.joint3_pos[0]),int(self.joint3_pos[1])),(0,255,0))
-        cv2.drawMarker(im, (int(self.joint4_pos[0]),int(self.joint4_pos[1])),(255,0,0))
+        cv2.drawMarker(im, (int(self.joint4_pos[0]),int(self.joint4_pos[1])),(0,0,255))
 
         cv2.imshow('im',im)
         cv2.waitKey(1)
@@ -128,6 +134,15 @@ class image1_43_converter:
         a.data = self.joint4_pos
         self.joint4_est_pub.publish(a)
 
+    def remove_static_joints(self, centres, img):
+        new_centres = []
+        for c in centres:
+            d1 = self.distance(c, self.joint1_pos)
+            d2 = self.distance(c, self.joint2_pos)
+            if d1 > 15 and d2 > 15 and img[c[1],c[0]] != 0:
+                new_centres.append(c)
+        return new_centres
+
     def find_nearest(self, centres, prev):
         if len(centres) == 0:
             return None
@@ -135,7 +150,7 @@ class image1_43_converter:
         for c in centres:
             if self.distance(c,prev) < self.distance(closest,prev):
                 closest = c
-        if self.distance(closest,prev) > 20: #TODO check this constant
+        if self.distance(closest,prev) > 40: #TODO check this constant
             return None
         else:
             return closest
@@ -164,8 +179,8 @@ class image1_43_converter:
         t = rospy.get_time() - self.time_trajectory
         # ~~comment out the following 3 lines for the robot to run indefinitely~~
         # if (t >= 5):    # reset time to 0 after 5 seconds
-            # t = 0
-            # self.time_trajectory = rospy.get_time()
+        #     t = 0
+        #     self.time_trajectory = rospy.get_time()
 
         # calculate sinusoidal signals
         j2 = (np.pi / 2) * np.sin((np.pi/15) * t)
