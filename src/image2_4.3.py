@@ -1,46 +1,35 @@
 #!/usr/bin/env python3
-
 import sys
 import rospy
 import cv2
 import numpy as np
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float64MultiArray, Float64
+from std_msgs.msg import Float64MultiArray
 from cv_bridge import CvBridge, CvBridgeError
 
-class image1_43_converter:
+class image2_converter:
 
-    # Defines publisher and subscriber
+  # Defines publisher and subscriber
     def __init__(self):
         # initialize the node named image_processing
         rospy.init_node('image_processing', anonymous=True)
-        # initialize a publisher to send images from camera1 to a topic named image_topic1
-        self.image_pub1 = rospy.Publisher("image_topic1",Image, queue_size = 1)
+        # initialize a publisher to send images from camera2 to a topic named image_topic2
+        self.image_pub2 = rospy.Publisher("image_topic2",Image, queue_size = 1)
         # initialize a subscriber to recieve messages rom a topic named /robot/camera1/image_raw and use callback function to recieve data
-        self.image_sub1 = rospy.Subscriber("/camera1/robot/image_raw",Image,self.callback1)
+        self.image_sub2 = rospy.Subscriber("/camera2/robot/image_raw",Image,self.callback2)
         # initialize the bridge between openCV and ROS
         self.bridge = CvBridge()
 
-        # initialize a publisher to send joints' angular position to the robot
-        self.robot_joint1_pub = rospy.Publisher(
-            "/robot/joint1_position_controller/command", Float64, queue_size=10)
-        self.robot_joint2_pub = rospy.Publisher(
-            "/robot/joint2_position_controller/command", Float64, queue_size=10)
-        self.robot_joint3_pub = rospy.Publisher(
-            "/robot/joint3_position_controller/command", Float64, queue_size=10)
-        self.robot_joint4_pub = rospy.Publisher(
-            "/robot/joint4_position_controller/command", Float64, queue_size=10)
-
         # initialize a publisher to send joints' estimated position to topics
-        # this camera views the robot on the y and z axes
+        # this camera views the robot on the x and z axes
         self.joint1_est_pub = rospy.Publisher(
-            "/estimates/yz/joint1_43", Float64MultiArray, queue_size=10)
+            "/estimates/xz/joint1_43", Float64MultiArray, queue_size=10)
         self.joint2_est_pub = rospy.Publisher(
-            "/estimates/yz/joint2_43", Float64MultiArray, queue_size=10)
+            "/estimates/xz/joint2_43", Float64MultiArray, queue_size=10)
         self.joint3_est_pub = rospy.Publisher(
-            "/estimates/yz/joint3_43", Float64MultiArray, queue_size=10)
+            "/estimates/xz/joint3_43", Float64MultiArray, queue_size=10)
         self.joint4_est_pub = rospy.Publisher(
-            "/estimates/yz/joint4_43", Float64MultiArray, queue_size=10)
+            "/estimates/xz/joint4_43", Float64MultiArray, queue_size=10)
 
         # initialize arrays to store joint positions
         self.joint1_pos = np.array([400,532])
@@ -51,26 +40,31 @@ class image1_43_converter:
         # record start time
         self.time_trajectory = rospy.get_time()
 
-  # receive data from camera 1, process it, and publish
-    def callback1(self,data):
+  # receive data from camera 2, process it, and publish
+    def callback2(self,data):
         # receive the image
         try:
-            self.cv_image1 = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            self.cv_image2 = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
-
         # uncomment if you want to save the image
-        # cv2.imwrite('image_copy.png', self.cv_image1)
+        # cv2.imwrite('image_copy.png', cv_image)
+        
+        # t = rospy.get_time() - self.time_trajectory
+        # # ~~comment out the following 4 lines if the robot is running indefinitely~~
+        # if (t >= 5):    # reset time to 0 after 5 seconds
+        #     t = 0
+        #     self.joint3_pos = np.array([400,380])
+        #     self.joint4_pos = np.array([400,300])
 
-        self.find_joints(self.cv_image1)
-        self.move_joints()
-
-        im1=cv2.imshow('window1', self.cv_image1)
+        self.find_joints(self.cv_image2)
+        
+        im2=cv2.imshow('window2', self.cv_image2)
         cv2.waitKey(1)
-
+    
         # publish the results
         try: 
-            self.image_pub1.publish(self.bridge.cv2_to_imgmsg(self.cv_image1, "bgr8"))
+            self.image_pub2.publish(self.bridge.cv2_to_imgmsg(self.cv_image2, "bgr8"))
         except CvBridgeError as e:
             print(e)
 
@@ -156,30 +150,9 @@ class image1_43_converter:
         pos_2 = np.array([pos_2[0],pos_2[1]])
         return np.sqrt(np.sum((pos_1 - pos_2)**2))
 
-    # moves joints using sin function
-    def move_joints(self):
-        t = rospy.get_time() - self.time_trajectory
-        # ~~comment out the following 5 lines for the robot to run indefinitely~~
-        # if (t >= 5):    # reset time to 0 after 5 seconds
-        #     t = 0
-        #     self.time_trajectory = rospy.get_time()
-        #     self.joint3_pos = np.array([400,380])
-        #     self.joint4_pos = np.array([400,300])
-
-        # calculate sinusoidal signals
-        j2 = (np.pi / 2) * np.sin((np.pi/15) * t)
-        j3 = (np.pi / 2) * np.sin((np.pi/18) * t)
-        j4 = (np.pi / 3) * np.sin((np.pi/20) * t)
-        # ~~change j4 pi/2 to pi/3 to prevent EE hitting ground if running longer than 5 seconds~~
-
-        # publish the results
-        self.robot_joint2_pub.publish(j2)
-        self.robot_joint3_pub.publish(j3)
-        self.robot_joint4_pub.publish(j4)
-
 # call the class
 def main(args):
-    ic = image1_43_converter()
+    ic = image2_converter()
     try:
         rospy.spin()
     except KeyboardInterrupt:
@@ -189,4 +162,3 @@ def main(args):
 # run the code if the node is called
 if __name__ == '__main__':
     main(sys.argv)
-
