@@ -26,10 +26,6 @@ class vision:
             "/estimates/target", Float64MultiArray, queue_size=10)
 
         # image1 position topics
-        self.yz_joint1_sub = message_filters.Subscriber(
-            "/estimates/yz/joint1", Float64MultiArray, queue_size=10)
-        self.yz_joint2_sub = message_filters.Subscriber(
-            "/estimates/yz/joint2", Float64MultiArray, queue_size=10)
         self.yz_joint3_sub = message_filters.Subscriber(
             "/estimates/yz/joint3", Float64MultiArray, queue_size=10)
         self.yz_joint4_sub = message_filters.Subscriber(
@@ -38,10 +34,6 @@ class vision:
             "/estimates/yz/target", Float64MultiArray, queue_size=10)
 
         # image2 position topics
-        self.xz_joint1_sub = message_filters.Subscriber(
-            "/estimates/xz/joint1", Float64MultiArray, queue_size=10)
-        self.xz_joint2_sub = message_filters.Subscriber(
-            "/estimates/xz/joint2", Float64MultiArray, queue_size=10)
         self.xz_joint3_sub = message_filters.Subscriber(
             "/estimates/xz/joint3", Float64MultiArray, queue_size=10)
         self.xz_joint4_sub = message_filters.Subscriber(
@@ -51,27 +43,19 @@ class vision:
 
         # synchronize joint positions for the callback
         ts = message_filters.ApproximateTimeSynchronizer([
-            self.yz_joint1_sub,
-            self.yz_joint2_sub,
             self.yz_joint3_sub,
             self.yz_joint4_sub,
-            self.xz_joint1_sub,
-            self.xz_joint2_sub,
             self.xz_joint3_sub,
             self.xz_joint4_sub,
             self.yz_target_sub,
             self.xz_target_sub] , 1, 0.05, allow_headerless=True)
         ts.registerCallback(self.callback)
 
-    def callback(self, d0, d1, d2, d3, d4, d5, d6, d7, t1, t2):
-        yz_joint1 = d0.data
-        yz_joint2 = d1.data
-        yz_joint3 = d2.data
-        yz_joint4 = d3.data
-        xz_joint1 = d4.data
-        xz_joint2 = d5.data
-        xz_joint3 = d6.data
-        xz_joint4 = d7.data
+    def callback(self, d0, d1, d2, d3, t1, t2):
+        yz_joint3 = d0.data
+        yz_joint4 = d1.data
+        xz_joint3 = d2.data
+        xz_joint4 = d3.data
         yz_target = t1.data
         xz_target = t2.data
 
@@ -107,7 +91,7 @@ class vision:
 
         # convert pixels to meter distance and publish:
         t = Float64MultiArray()
-        bias = np.array([0.8,0.8,0.95])
+        bias = np.array([0.8,0.8,0.9])
         t.data = pos_target * meters_per_pixel * bias
         self.target_pub.publish(t)
 

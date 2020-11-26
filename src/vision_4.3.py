@@ -12,8 +12,6 @@ class vision:
         rospy.init_node('vision', anonymous=True)
 
         # initialize publishers for estimated angles
-        self.ang1_pub = rospy.Publisher(
-            "/estimates/angles/link_1", Float64, queue_size=10)
         self.ang2_pub = rospy.Publisher(
             "/estimates/angles/link_2", Float64, queue_size=10)
         self.ang3_pub = rospy.Publisher(
@@ -22,22 +20,12 @@ class vision:
             "/estimates/angles/link_4", Float64, queue_size=10)
 
         # image1 position topics
-        self.yz_joint1_sub = message_filters.Subscriber(
-            "/estimates/yz/joint1_43", Float64MultiArray, queue_size=10)
-        self.yz_joint2_sub = message_filters.Subscriber(
-            "/estimates/yz/joint2_43", Float64MultiArray, queue_size=10)
         self.yz_joint3_sub = message_filters.Subscriber(
             "/estimates/yz/joint3_43", Float64MultiArray, queue_size=10)
         self.yz_joint4_sub = message_filters.Subscriber(
             "/estimates/yz/joint4_43", Float64MultiArray, queue_size=10)
-        self.yz_target_sub = message_filters.Subscriber(
-            "/estimates/yz/target_43", Float64MultiArray, queue_size=10)
 
         # image2 position topics
-        self.xz_joint1_sub = message_filters.Subscriber(
-            "/estimates/xz/joint1_43", Float64MultiArray, queue_size=10)
-        self.xz_joint2_sub = message_filters.Subscriber(
-            "/estimates/xz/joint2_43", Float64MultiArray, queue_size=10)
         self.xz_joint3_sub = message_filters.Subscriber(
             "/estimates/xz/joint3_43", Float64MultiArray, queue_size=10)
         self.xz_joint4_sub = message_filters.Subscriber(
@@ -62,7 +50,7 @@ class vision:
         xz_joint1 = yz_joint1
         yz_joint2 = np.array([400.0,477.0])
         xz_joint2 = yz_joint1
-        
+
         # defining axes
         x_axis = np.array([1,0,0])
         y_axis = np.array([0,1,0])

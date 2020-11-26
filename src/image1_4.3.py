@@ -145,10 +145,7 @@ class image1_43_converter:
         for c in centres:
             if self.distance(c,prev) < self.distance(closest,prev):
                 closest = c
-        # if self.distance(closest,prev) > 40: #TODO check this constant
-        #     return None
-        else:
-            return closest
+        return closest
 
     # distance between two points
     def distance(self, pos_1, pos_2):
