@@ -69,6 +69,7 @@ class image1_converter:
 
         self.find_joints()
         self.detect_target()
+        # Comment out function below so control.py runs more smoothly
         #self.move_joints()
 
         im1=cv2.imshow('window1', self.cv_image1)
