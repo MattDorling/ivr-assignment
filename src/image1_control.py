@@ -115,7 +115,7 @@ class image1_converter:
         else:
             # use previous detected position
             cx,cy = self.target_pos
-
+        
         self.target_pos = np.array([cx, cy])
         centre = Float64MultiArray()
         centre.data = np.array([cx, cy])
@@ -130,25 +130,25 @@ class image1_converter:
                                             (0, 100, 100), (0, 255, 255))
         a.data = self.joint1_pos
         self.joint1_est_pub.publish(a)
-
+        
         # blue
         self.joint2_pos = self.detect_colour(self.joint2_pos, self.cv_image1,
                                             (100, 0, 0), (255, 0, 0))
         a.data = self.joint2_pos
         self.joint2_est_pub.publish(a)
-
+        
         # green
         self.joint3_pos = self.detect_colour(self.joint3_pos, self.cv_image1,
                                             (0, 100, 0), (0, 255, 0))
         a.data = self.joint3_pos
         self.joint3_est_pub.publish(a)
-
+        
         # red
         self.joint4_pos = self.detect_colour(self.joint4_pos, self.cv_image1,
                                             (0, 0, 100), (0, 0, 255))
         a.data = self.joint4_pos
         self.joint4_est_pub.publish(a)
-
+    
     # detecting the centre of the {colour} circle
     def detect_colour(self, joint, image, bgr_low, bgr_up):
         mask = cv2.inRange(image, bgr_low, bgr_up)
@@ -193,4 +193,3 @@ def main(args):
 # run the code if the node is called
 if __name__ == '__main__':
     main(sys.argv)
-    

@@ -24,6 +24,10 @@ class vision:
         # initialize publisher for target position
         self.target_pub = rospy.Publisher(
             "/estimates/target", Float64MultiArray, queue_size=10)
+        
+        #initialize publisher for estimated end-effector position
+        self.end_effector_pub = rospy.Publisher(
+            "/estimates/end_effector", Float64MultiArray, queue_size=10)
 
         #initialize publisher for estimated end-effector position
         self.end_effector_pub = rospy.Publisher(
@@ -109,13 +113,13 @@ class vision:
         pos_joint4 = np.array([ xz_joint4[0],
                                 yz_joint4[0],
                                (xz_joint4[1] + yz_joint4[1])/2])
-
+        
         # convert pixels to meter distance for end_effector and publish:
         ef = Float64MultiArray()
         bias2 = np.array([0.8,-0.8,0.9])
         ef.data = pos_joint4 * meters_per_pixel * bias2
         self.end_effector_pub.publish(ef)
-        
+
         # link vectors used to calculate angles
         vec_link2 = np.array(pos_joint3-pos_joint2)
         vec_link3 = np.array(pos_joint4-pos_joint3)
