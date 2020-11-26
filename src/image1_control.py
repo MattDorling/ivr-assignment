@@ -69,8 +69,6 @@ class image1_converter:
 
         self.find_joints()
         self.detect_target()
-        # Comment out function below so control.py runs more smoothly
-        #self.move_joints()
 
         im1=cv2.imshow('window1', self.cv_image1)
         cv2.waitKey(1)
@@ -161,25 +159,6 @@ class image1_converter:
         else:
             cx,cy = joint   # return previous known position; cannot see joint
         return np.array([cx, cy])
-
-    # moves joints using sin function
-    def move_joints(self):
-        t = rospy.get_time() - self.time_trajectory
-        # ~~comment out the following 3 lines for the robot to run indefinitely~~
-        if (t >= 5.5):    # reset time to 0 after 5 seconds
-            t = 0
-            self.time_trajectory = rospy.get_time()
-
-        # calculate sinusoidal signals
-        j2 = (np.pi / 2) * np.sin((np.pi/15) * t)
-        j3 = (np.pi / 2) * np.sin((np.pi/18) * t)
-        j4 = (np.pi / 2) * np.sin((np.pi/20) * t)
-        # ~~change j4 pi/2 to pi/3 to prevent EE hitting ground if running longer than 5 seconds~~
-
-        # publish the results
-        self.robot_joint2_pub.publish(j2)
-        self.robot_joint3_pub.publish(j3)
-        self.robot_joint4_pub.publish(j4)
 
 # call the class
 def main(args):

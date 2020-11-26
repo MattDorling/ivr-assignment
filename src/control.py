@@ -69,22 +69,22 @@ class control:
         
         # Add degrees to theta1 & theta2, with the angles between xi-1 & xi along zi-1
         # in DH parameters
-        t1 = t1 + np.pi/2;
-        t2 = t2 + np.pi/2;
+        t1 = t1 + np.pi/2
+        t2 = t2 + np.pi/2
         
         # Plot given angles into given forward kinematics equation
         end_effector = np.array([[3*(np.sin(t1)*np.sin(t3) + np.cos(t1)*np.cos(t2)*np.cos(t3))*np.cos(t4) + 3.5*np.sin(t1)*np.sin(t3) - 3*np.sin(t2)*np.sin(t4)*np.cos(t1) + 3.5*np.cos(t1)*np.cos(t2)*np.cos(t3)], 
                                  [3*(np.sin(t1)*np.cos(t2)*np.cos(t3) + np.sin(t3)*np.cos(t1))*np.cos(t4) - 3*np.sin(t1)*np.sin(t2)*np.sin(t4) + 3.5*np.sin(t1)*np.cos(t2)*np.cos(t3) + 3.5*np.sin(t3)*np.cos(t1)],
                                  [3*np.sin(t2)*np.cos(t3)*np.cos(t4) + 3.5*np.sin(t2)*np.cos(t3) + 3*np.sin(t4)*np.cos(t2) + 2.5]])
-        return end_effector;
+        return end_effector
     
     
     def calculate_jacobian(self, t1, t2, t3, t4):
 
         # Add degrees to theta1 & theta2, with the angles between xi-1 & xi along zi-1
         # in DH parameters
-        t1 = t1 + np.pi/2;
-        t2 = t2 + np.pi/2;
+        t1 = t1 + np.pi/2
+        t2 = t2 + np.pi/2
   
         # Plot given angles into given jacobian equation
         jacobian = np.array([[(-3*np.sin(t1)*np.cos(t2)*np.cos(t3) + 3*np.sin(t3)*np.cos(t1))*np.cos(t4) + 3*np.sin(t1)*np.sin(t2)*np.sin(t4) - 3.5*np.sin(t1)*np.cos(t2)*np.cos(t3) + 3.5*np.sin(t3)*np.cos(t1),
@@ -98,9 +98,9 @@ class control:
                              [0,
                               -3*np.sin(t2)*np.sin(t4) + 3*np.cos(t2)*np.cos(t3)*np.cos(t4) + 3.5*np.cos(t2)*np.cos(t3),
                               -3*np.sin(t2)*np.sin(t3)*np.cos(t4) - 3.5*np.sin(t2)*np.sin(t3),
-                              -3*np.sin(t2)*np.sin(t4)*np.cos(t3) + 3*np.cos(t2)*np.cos(t4)]]);
+                              -3*np.sin(t2)*np.sin(t4)*np.cos(t3) + 3*np.cos(t2)*np.cos(t4)]])
     
-        return jacobian;
+        return jacobian
     
     
     def control_closed(self, t1, t2, t3, t4, tar_pos):
