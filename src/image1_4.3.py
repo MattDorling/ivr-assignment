@@ -160,7 +160,7 @@ class image1_43_converter:
     def move_joints(self):
         t = rospy.get_time() - self.time_trajectory
         # ~~comment out the following 5 lines for the robot to run indefinitely~~
-        if (t >= 5):    # reset time to 0 after 5 seconds
+        if (t >= 5.5):    # reset time to 0 after 5 seconds
             t = 0
             self.time_trajectory = rospy.get_time()
             self.joint3_pos = np.array([400,380])

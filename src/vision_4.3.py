@@ -48,7 +48,7 @@ class vision:
             self.yz_joint3_sub,
             self.yz_joint4_sub,
             self.xz_joint3_sub,
-            self.xz_joint4_sub] , 4, 0.066, allow_headerless=True)
+            self.xz_joint4_sub] , 1, 0.05, allow_headerless=True)
         ts.registerCallback(self.callback)
 
     def callback(self, d0, d1, d2, d3):
@@ -62,9 +62,6 @@ class vision:
         xz_joint1 = yz_joint1
         yz_joint2 = np.array([400.0,477.0])
         xz_joint2 = yz_joint1
-
-        # calculating the ratio to convert between pixels and meters:
-        meters_per_pixel = self.pixel2meter(yz_joint1,yz_joint2,2.5)
         
         # defining axes
         x_axis = np.array([1,0,0])

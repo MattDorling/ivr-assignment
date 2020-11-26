@@ -60,7 +60,7 @@ class vision:
             self.xz_joint3_sub,
             self.xz_joint4_sub,
             self.yz_target_sub,
-            self.xz_target_sub] , 10, 0.066, allow_headerless=True)
+            self.xz_target_sub] , 1, 0.05, allow_headerless=True)
         ts.registerCallback(self.callback)
 
     def callback(self, d0, d1, d2, d3, d4, d5, d6, d7, t1, t2):
@@ -107,7 +107,8 @@ class vision:
 
         # convert pixels to meter distance and publish:
         t = Float64MultiArray()
-        t.data = pos_target * meters_per_pixel
+        bias = np.array([0.8,0.8,0.95])
+        t.data = pos_target * meters_per_pixel * bias
         self.target_pub.publish(t)
 
         # get vector positions of the joints

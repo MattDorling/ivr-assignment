@@ -119,10 +119,6 @@ class image1_converter:
         centre = Float64MultiArray()
         centre.data = np.array([cx, cy])
         self.target_est_pub.publish(centre)
-        
-        # blobs = cv2.drawMarker(image, (int(cx),int(cy)), (0,0,255))
-        # number_of_blobs = len(keypoints) 
-        # cv2.imshow("Filtering Circular Blobs Only", blobs) 
 
     # find the centres of the joints and publishes these to topics
     def find_joints(self):
@@ -169,7 +165,7 @@ class image1_converter:
     def move_joints(self):
         t = rospy.get_time() - self.time_trajectory
         # ~~comment out the following 3 lines for the robot to run indefinitely~~
-        if (t >= 5):    # reset time to 0 after 5 seconds
+        if (t >= 5.5):    # reset time to 0 after 5 seconds
             t = 0
             self.time_trajectory = rospy.get_time()
 
