@@ -1,5 +1,8 @@
 # ivr-assignment
-TO RUN TASK 2:  
+
+urdf files in /urdf folder: The default robot.urdf is the coloured jointed file. robot_black.urdf is the black jointed robot file for section 4.
+
+TO RUN TASK 2:  (use default coloured joint robot.urdf)   
 -- image1.py  
 -- image2.py  
 -- vision.py  
