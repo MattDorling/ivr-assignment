@@ -73,8 +73,8 @@ class control:
         t2 = t2 + np.pi/2
         
         # Plot given angles into given forward kinematics equation
-        end_effector = np.array([[3*(np.sin(t1)*np.sin(t3) + np.cos(t1)*np.cos(t2)*np.cos(t3))*np.cos(t4) + 3.5*np.sin(t1)*np.sin(t3) - 3*np.sin(t2)*np.sin(t4)*np.cos(t1) + 3.5*np.cos(t1)*np.cos(t2)*np.cos(t3)], 
-                                 [3*(np.sin(t1)*np.cos(t2)*np.cos(t3) + np.sin(t3)*np.cos(t1))*np.cos(t4) - 3*np.sin(t1)*np.sin(t2)*np.sin(t4) + 3.5*np.sin(t1)*np.cos(t2)*np.cos(t3) + 3.5*np.sin(t3)*np.cos(t1)],
+        end_effector = np.array([[3*(np.sin(t1)*np.sin(t3) + np.cos(t1)*np.cos(t2)*np.cos(t3))*np.cos(t4) + 3.5*np.sin(t1)*np.sin(t3) - 3*np.sin(t2)*np.sin(t4)*np.cos(t1) + 3.5*np.cos(t1)*np.cos(t2)*np.cos(t3)],
+                                 [3*(np.sin(t1)*np.cos(t2)*np.cos(t3) - np.sin(t3)*np.cos(t1))*np.cos(t4) - 3*np.sin(t1)*np.sin(t2)*np.sin(t4) + 3.5*np.sin(t1)*np.cos(t2)*np.cos(t3) - 3.5*np.sin(t3)*np.cos(t1)],
                                  [3*np.sin(t2)*np.cos(t3)*np.cos(t4) + 3.5*np.sin(t2)*np.cos(t3) + 3*np.sin(t4)*np.cos(t2) + 2.5]])
         return end_effector
     
@@ -91,10 +91,10 @@ class control:
                               -3*np.sin(t2)*np.cos(t1)*np.cos(t3)*np.cos(t4) - 3.5*np.sin(t2)*np.cos(t1)*np.cos(t3) - 3*np.sin(t4)*np.cos(t1)*np.cos(t2),
                               (3*np.sin(t1)*np.cos(t3) - 3*np.sin(t3)*np.cos(t1)*np.cos(t2))*np.cos(t4) + 3.5*np.sin(t1)*np.cos(t3) - 3.5*np.sin(t3)*np.cos(t1)*np.cos(t2),
                               -(3*np.sin(t1)*np.sin(t3) + 3*np.cos(t1)*np.cos(t2)*np.cos(t3))*np.sin(t4) - 3*np.sin(t2)*np.cos(t1)*np.cos(t4)],
-                             [(-3*np.sin(t1)*np.sin(t3) + 3*np.cos(t1)*np.cos(t2)*np.cos(t3))*np.cos(t4) - 3.5*np.sin(t1)*np.sin(t3) - 3*np.sin(t2)*np.sin(t4)*np.cos(t1) + 3.5*np.cos(t1)*np.cos(t2)*np.cos(t3),
+                             [(3*np.sin(t1)*np.sin(t3) + 3*np.cos(t1)*np.cos(t2)*np.cos(t3))*np.cos(t4) + 3.5*np.sin(t1)*np.sin(t3) - 3*np.sin(t2)*np.sin(t4)*np.cos(t1) + 3.5*np.cos(t1)*np.cos(t2)*np.cos(t3),
                               -3*np.sin(t1)*np.sin(t2)*np.cos(t3)*np.cos(t4) - 3.5*np.sin(t1)*np.sin(t2)*np.cos(t3) - 3*np.sin(t1)*np.sin(t4)*np.cos(t2),
-                              (-3*np.sin(t1)*np.sin(t3)*np.cos(t2) + 3*np.cos(t1)*np.cos(t3))*np.cos(t4) - 3.5*np.sin(t1)*np.sin(t3)*np.cos(t2) + 3.5*np.cos(t1)*np.cos(t3),
-                              -(3*np.sin(t1)*np.cos(t2)*np.cos(t3) + 3*np.sin(t3)*np.cos(t1))*np.sin(t4) - 3*np.sin(t1)*np.sin(t2)*np.cos(t4)],
+                              (-3*np.sin(t1)*np.sin(t3)*np.cos(t2) - 3*np.cos(t1)*np.cos(t3))*np.cos(t4) - 3.5*np.sin(t1)*np.sin(t3)*np.cos(t2) - 3.5*np.cos(t1)*np.cos(t3),
+                              -(3*np.sin(t1)*np.cos(t2)*np.cos(t3) - 3*np.sin(t3)*np.cos(t1))*np.sin(t4) - 3*np.sin(t1)*np.sin(t2)*np.cos(t4)],
                              [0,
                               -3*np.sin(t2)*np.sin(t4) + 3*np.cos(t2)*np.cos(t3)*np.cos(t4) + 3.5*np.cos(t2)*np.cos(t3),
                               -3*np.sin(t2)*np.sin(t3)*np.cos(t4) - 3.5*np.sin(t2)*np.sin(t3),
@@ -121,7 +121,7 @@ class control:
         self.error_d = ((pos_d - pos) - self.error)/dt
         # estimate error
         self.error = pos_d-pos
-        q = np.array([0, t2, t3, t4]) # estimate initial value of joints'
+        q = np.array([t1, t2, t3, t4]) # estimate initial value of joints'
         J_inv = np.linalg.pinv(self.calculate_jacobian(t1, t2, t3, t4))  # calculating the psudeo inverse of Jacobian
         #J_inv = np.linalg.pinv(np.array([[1,1,1,1],[1,1,1,1],[1,1,1,1]]))
         dq_d =np.dot(J_inv, ( np.dot(K_d,self.error_d.transpose()) + np.dot(K_p,self.error.transpose()) ) )  # control input (angular velocity of joints)
@@ -155,7 +155,7 @@ class control:
     
         # Publish the results
         try:
-            self.robot_joint1_pub.publish(0)
+            self.robot_joint1_pub.publish(self.joint1)
             self.robot_joint2_pub.publish(self.joint2)
             self.robot_joint3_pub.publish(self.joint3)
             self.robot_joint4_pub.publish(self.joint4)
